@@ -13,8 +13,13 @@ serve(async (req) => {
   }
 
   try {
+    const apiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const configuration = new Configuration({
-      apiKey: Deno.env.get('OPENAI_API_KEY'),
+      apiKey,
     });
     const openai = new OpenAIApi(configuration);
 
@@ -26,11 +31,16 @@ serve(async (req) => {
       throw new Error('No audio file provided');
     }
 
+    // Convert the File to a Blob and then to ArrayBuffer
+    const arrayBuffer = await audioFile.arrayBuffer();
+    const blob = new Blob([arrayBuffer], { type: audioFile.type });
+
     // Transcribe the audio using Whisper API
     const response = await openai.audio.transcriptions.create({
-      file: audioFile,
+      file: blob,
       model: 'whisper-1',
       language: 'en',
+      response_format: 'json',
     });
 
     return new Response(
@@ -43,9 +53,13 @@ serve(async (req) => {
       },
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Transcription error:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: 'Failed to transcribe audio',
+        details: error.message 
+      }),
       {
         status: 500,
         headers: {

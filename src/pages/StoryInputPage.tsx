@@ -41,8 +41,18 @@ const StoryInputPage: React.FC = () => {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        }
+      });
+      
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm'
+      });
+      
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -58,7 +68,7 @@ const StoryInputPage: React.FC = () => {
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // Collect data every second
       setIsRecording(true);
     } catch (error) {
       console.error('Error accessing microphone:', error);
@@ -77,7 +87,7 @@ const StoryInputPage: React.FC = () => {
   const transcribeAudio = async (audioBlob: Blob) => {
     try {
       const formData = new FormData();
-      formData.append('audio', audioBlob);
+      formData.append('audio', audioBlob, 'recording.webm');
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe`, {
         method: 'POST',
@@ -88,7 +98,8 @@ const StoryInputPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Transcription failed');
+        const error = await response.json();
+        throw new Error(error.details || 'Transcription failed');
       }
 
       const { text } = await response.json();
@@ -101,7 +112,7 @@ const StoryInputPage: React.FC = () => {
       localStorage.setItem('storyResponses', JSON.stringify(newResponses));
     } catch (error) {
       console.error('Transcription error:', error);
-      alert('Failed to transcribe audio. Please try again.');
+      alert('Failed to transcribe audio. Please try again or use text input instead.');
     } finally {
       setIsTranscribing(false);
     }
