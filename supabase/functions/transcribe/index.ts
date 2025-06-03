@@ -1,16 +1,20 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { Configuration, OpenAIApi } from 'npm:openai@^4.0.0';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { Configuration, OpenAIApi } from "npm:openai@^4.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'OPTIONS, POST',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json',
 };
 
 serve(async (req) => {
-  // Handle CORS
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
   }
 
   try {
@@ -52,10 +56,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ text: response.text }),
       {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
+        headers: corsHeaders,
       },
     );
   } catch (error) {
@@ -68,10 +69,7 @@ serve(async (req) => {
       }),
       {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
+        headers: corsHeaders,
       },
     );
   }

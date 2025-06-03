@@ -39,7 +39,6 @@ const StoryInputPage: React.FC = () => {
       setResponses(JSON.parse(savedResponses));
     }
 
-    // Cleanup function to stop any active streams
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
@@ -76,13 +75,12 @@ const StoryInputPage: React.FC = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         await transcribeAudio(audioBlob);
         
-        // Stop all tracks
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
         }
       };
 
-      mediaRecorder.start(1000); // Collect data every second
+      mediaRecorder.start(1000);
       setIsRecording(true);
     } catch (error) {
       console.error('Error accessing microphone:', error);
@@ -103,7 +101,9 @@ const StoryInputPage: React.FC = () => {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe`, {
+      const functionUrl = new URL('/functions/v1/transcribe', import.meta.env.VITE_SUPABASE_URL).toString();
+
+      const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -111,17 +111,12 @@ const StoryInputPage: React.FC = () => {
         body: formData,
       });
 
-      let result;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        result = await response.json();
-      } else {
-        result = { text: await response.text() };
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
+        throw new Error(errorData.details || errorData.error || `HTTP error! status: ${response.status}`);
       }
 
-      if (!response.ok) {
-        throw new Error(result.details || 'Transcription failed');
-      }
+      const result = await response.json();
 
       const newResponses = {
         ...responses,
