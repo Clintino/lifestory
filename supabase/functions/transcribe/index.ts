@@ -4,6 +4,7 @@ import { Configuration, OpenAIApi } from 'npm:openai@^4.0.0';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'OPTIONS, POST',
 };
 
 serve(async (req) => {
@@ -31,9 +32,14 @@ serve(async (req) => {
       throw new Error('No audio file provided');
     }
 
+    // Ensure the file is not empty
+    if (audioFile.size === 0) {
+      throw new Error('Audio file is empty');
+    }
+
     // Convert the File to a Blob and then to ArrayBuffer
     const arrayBuffer = await audioFile.arrayBuffer();
-    const blob = new Blob([arrayBuffer], { type: audioFile.type });
+    const blob = new Blob([arrayBuffer], { type: 'audio/webm' });
 
     // Transcribe the audio using Whisper API
     const response = await openai.audio.transcriptions.create({

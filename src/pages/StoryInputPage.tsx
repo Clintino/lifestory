@@ -31,12 +31,20 @@ const StoryInputPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     const savedResponses = localStorage.getItem('storyResponses');
     if (savedResponses) {
       setResponses(JSON.parse(savedResponses));
     }
+
+    // Cleanup function to stop any active streams
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
   }, []);
 
   const startRecording = async () => {
@@ -48,6 +56,8 @@ const StoryInputPage: React.FC = () => {
           sampleRate: 44100
         }
       });
+      
+      streamRef.current = stream;
       
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm'
@@ -65,7 +75,11 @@ const StoryInputPage: React.FC = () => {
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         await transcribeAudio(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
+        
+        // Stop all tracks
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
       };
 
       mediaRecorder.start(1000); // Collect data every second
