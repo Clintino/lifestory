@@ -111,16 +111,21 @@ const StoryInputPage: React.FC = () => {
         body: formData,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.details || 'Transcription failed');
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        result = { text: await response.text() };
       }
 
-      const { text } = await response.json();
-      
+      if (!response.ok) {
+        throw new Error(result.details || 'Transcription failed');
+      }
+
       const newResponses = {
         ...responses,
-        [prompts[currentPromptIndex].id]: text,
+        [prompts[currentPromptIndex].id]: result.text,
       };
       setResponses(newResponses);
       localStorage.setItem('storyResponses', JSON.stringify(newResponses));
