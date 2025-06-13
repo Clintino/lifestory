@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Share2, Bookmark, Play, Pause, Book, Printer, ArrowRight } from 'lucide-react';
+import { Download, Share2, Bookmark, Book, Printer, ArrowRight } from 'lucide-react';
 import PageTransition from '../components/ui/PageTransition';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -15,12 +15,7 @@ const chapters = [
 
 const StorybookDisplayPage: React.FC = () => {
   const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-
-  const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
 
   const viewFullStorybook = () => {
     navigate('/digital-story/margaret-johnson');
@@ -70,25 +65,6 @@ const StorybookDisplayPage: React.FC = () => {
                     <br />
                     Beloved grandmother of 3
                   </p>
-                  
-                  <div className="border-t border-neutral-200 pt-4">
-                    <button
-                      className="flex items-center justify-center w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 py-2 rounded-md transition-colors"
-                      onClick={togglePlayPause}
-                    >
-                      {isPlaying ? (
-                        <>
-                          <Pause size={16} className="mr-2" />
-                          Pause Audio
-                        </>
-                      ) : (
-                        <>
-                          <Play size={16} className="mr-2" />
-                          Play Audio
-                        </>
-                      )}
-                    </button>
-                  </div>
                 </div>
               </Card>
               
