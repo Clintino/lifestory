@@ -230,13 +230,13 @@ const PreviewSummaryPage: React.FC = () => {
                             The complete storybook includes all chapters, photos, and memories beautifully arranged.
                           </p>
                         </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Subtle page curl effect */}
-                  <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-tl from-neutral-200 to-transparent opacity-30 rounded-tl-full transform rotate-180"></div>
+                      </div>
+                    </>
+                  )}
                 </div>
+
+                {/* Subtle page curl effect */}
+                <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-tl from-neutral-200 to-transparent opacity-30 rounded-tl-full transform rotate-180"></div>
               </div>
             </div>
           </div>
