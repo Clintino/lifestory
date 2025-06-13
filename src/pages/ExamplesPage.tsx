@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Pause, Star, ArrowRight, Heart, Users, BookOpen, Clock } from 'lucide-react';
+import { Play, Pause, Star, ArrowRight, Heart, Users, BookOpen, Clock, Volume2 } from 'lucide-react';
 import PageTransition from '../components/ui/PageTransition';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -13,8 +13,6 @@ const exampleStories = [
     location: "Ohio",
     emoji: "🌻",
     followUp: "But I said yes… because it was mashed.",
-    tag: "#funny #romance",
-    audioLength: "0:12",
     category: "Love & Romance"
   },
   {
@@ -25,8 +23,6 @@ const exampleStories = [
     location: "Montana",
     emoji: "⛰️",
     followUp: "And I was grateful for every step.",
-    tag: "#wisdom #resilience",
-    audioLength: "0:08",
     category: "Childhood"
   },
   {
@@ -37,11 +33,18 @@ const exampleStories = [
     location: "California",
     emoji: "💕",
     followUp: "Everything before that was just practice.",
-    tag: "#love #family",
-    audioLength: "0:15",
     category: "Family"
   }
 ];
+
+const specialStory = {
+  title: "His Last Letter",
+  quote: "We lost Dad last year. But hearing his voice, telling us how he met Mom at a dance, and how nervous he was to hold her hand... it gave my kids the grandfather they never got to meet.",
+  author: "James, Seattle",
+  emoji: "😢",
+  audioLength: "2 min",
+  hasLetter: true
+};
 
 const testimonials = [
   {
@@ -98,11 +101,11 @@ const impactStories = [
 ];
 
 const ExamplesPage: React.FC = () => {
-  const [playingAudio, setPlayingAudio] = useState<number | null>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [playingSpecialAudio, setPlayingSpecialAudio] = useState(false);
 
-  const toggleAudio = (storyId: number) => {
-    setPlayingAudio(playingAudio === storyId ? null : storyId);
+  const toggleSpecialAudio = () => {
+    setPlayingSpecialAudio(!playingSpecialAudio);
   };
 
   return (
@@ -120,9 +123,72 @@ const ExamplesPage: React.FC = () => {
           </div>
         </section>
 
+        {/* Special Featured Story - His Last Letter */}
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <Card className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-indigo-100">
+                <div className="text-center mb-6">
+                  <span className="text-3xl mb-4 block">{specialStory.emoji}</span>
+                  <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-800 mb-4">
+                    "{specialStory.title}"
+                  </h2>
+                </div>
+                
+                <blockquote className="text-lg md:text-xl text-neutral-700 text-center mb-6 leading-relaxed italic">
+                  "{specialStory.quote}"
+                </blockquote>
+                
+                <p className="text-center text-neutral-600 font-medium mb-8">
+                  — {specialStory.author}
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                  <button
+                    onClick={toggleSpecialAudio}
+                    className="flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors"
+                  >
+                    {playingSpecialAudio ? (
+                      <Pause size={20} />
+                    ) : (
+                      <Play size={20} />
+                    )}
+                    <span className="font-medium">
+                      {playingSpecialAudio ? 'Pause' : 'Play'} the recorded memory ({specialStory.audioLength})
+                    </span>
+                  </button>
+                  
+                  <Button
+                    variant="outline"
+                    className="border-indigo-500 text-indigo-600 hover:bg-indigo-50"
+                    icon={<BookOpen size={18} />}
+                  >
+                    Read the letter he recorded
+                  </Button>
+                </div>
+
+                {playingSpecialAudio && (
+                  <div className="mt-6 bg-white rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Volume2 size={16} className="text-indigo-600" />
+                      <span className="text-sm font-medium text-neutral-700">Playing: Dad's Dance Story</span>
+                    </div>
+                    <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-600 rounded-full animate-pulse" style={{ width: '45%' }}></div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* Emotional Impact Grid */}
         <section className="py-16">
           <div className="container mx-auto px-4">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-center text-neutral-800 mb-12">
+              More Stories That Touch Hearts
+            </h2>
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {exampleStories.map((story) => (
                 <Card key={story.id} className="p-6 hover:shadow-xl transition-all duration-300">
@@ -135,37 +201,7 @@ const ExamplesPage: React.FC = () => {
                       <span className="font-medium">{story.name}, {story.age}</span>
                       <span className="text-sm">– {story.location}</span>
                     </div>
-                    <p className="text-neutral-700 italic mb-4">"{story.followUp}"</p>
-                  </div>
-
-                  {/* Audio Player */}
-                  <div className="bg-neutral-100 rounded-lg p-3 mb-4">
-                    <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => toggleAudio(story.id)}
-                        className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700"
-                      >
-                        {playingAudio === story.id ? (
-                          <Pause size={16} />
-                        ) : (
-                          <Play size={16} />
-                        )}
-                        <span className="text-sm font-medium">Voice Clip</span>
-                      </button>
-                      <span className="text-xs text-neutral-500">{story.audioLength}</span>
-                    </div>
-                    {playingAudio === story.id && (
-                      <div className="mt-2 h-1 bg-neutral-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-600 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-indigo-600 font-medium">{story.tag}</span>
-                    <Button variant="text" size="sm" className="text-indigo-600 hover:text-indigo-700">
-                      Read full story →
-                    </Button>
+                    <p className="text-neutral-700 italic">"{story.followUp}"</p>
                   </div>
                 </Card>
               ))}
