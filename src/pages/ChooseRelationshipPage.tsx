@@ -18,8 +18,9 @@ const relationships = [
 const steps = [
   { id: 1, label: 'Choose Relationship' },
   { id: 2, label: 'Create Profile' },
-  { id: 3, label: 'Tell Story' },
-  { id: 4, label: 'Preview' },
+  { id: 3, label: 'Select Questions' },
+  { id: 4, label: 'Tell Story' },
+  { id: 5, label: 'Preview' },
 ];
 
 const ChooseRelationshipPage: React.FC = () => {
@@ -28,8 +29,13 @@ const ChooseRelationshipPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleNext = () => {
-    // In a real app, we'd save this to state management or context
     if (selectedRelationship) {
+      // Save relationship data
+      const relationshipData = {
+        relationship: selectedRelationship,
+        customRelationship: selectedRelationship === 'other' ? customRelationship : ''
+      };
+      localStorage.setItem('relationshipData', JSON.stringify(relationshipData));
       navigate('/create-profile');
     }
   };

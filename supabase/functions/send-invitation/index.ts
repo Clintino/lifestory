@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, profileName, senderName } = await req.json()
+    const { email, profileName, senderName, questions } = await req.json()
 
     if (!email || !profileName) {
       throw new Error('Email and profile name are required')
@@ -32,7 +32,16 @@ serve(async (req) => {
     const inviteLink = `${Deno.env.get('SITE_URL') || 'https://your-domain.com'}/story-form/${inviteId}`
 
     // Store the invitation in your database (you'd implement this)
-    // await storeInvitation(inviteId, email, profileName, senderName)
+    // await storeInvitation(inviteId, email, profileName, senderName, questions)
+
+    // Create questions list for email
+    const questionsList = questions && questions.length > 0 
+      ? questions.map((q: any, index: number) => `${index + 1}. ${q.text}`).join('\n')
+      : `1. What was your childhood like?
+2. What is your proudest achievement?
+3. What is a challenge you overcame?
+4. What are some traditions you value?
+5. What wisdom would you like to pass on?`
 
     const emailData = {
       sender: {
@@ -47,37 +56,34 @@ serve(async (req) => {
       ],
       subject: `${senderName || 'Someone'} wants to preserve your life story`,
       htmlContent: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #E75A68; text-align: center;">Your Story Matters</h1>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #E75A68; text-align: center; margin-bottom: 30px;">Your Story Matters</h1>
           
-          <p>Hello ${profileName},</p>
+          <p style="font-size: 16px; line-height: 1.6;">Hello ${profileName},</p>
           
-          <p>${senderName || 'Someone special'} has invited you to share your life story through our Life Story platform.</p>
+          <p style="font-size: 16px; line-height: 1.6;">${senderName || 'Someone special'} has invited you to share your life story through our Life Story platform.</p>
           
-          <p>We've prepared some thoughtful questions to help capture your memories and experiences. Your responses will be transformed into a beautiful digital storybook that can be treasured by your family for generations.</p>
+          <p style="font-size: 16px; line-height: 1.6;">We've prepared ${questions?.length || 5} thoughtful questions to help capture your memories and experiences. Your responses will be transformed into a beautiful digital storybook that can be treasured by your family for generations.</p>
           
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${inviteLink}" style="background-color: #E75A68; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Share Your Story</a>
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="${inviteLink}" style="background-color: #E75A68; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px;">Share Your Story</a>
           </div>
           
-          <p>The questions include:</p>
-          <ul>
-            <li>What was your childhood like?</li>
-            <li>What is your proudest achievement?</li>
-            <li>What is a challenge you overcame?</li>
-            <li>What are some traditions you value?</li>
-            <li>What wisdom would you like to pass on?</li>
-          </ul>
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+            <h3 style="color: #333; margin-top: 0;">The questions include:</h3>
+            <div style="white-space: pre-line; font-size: 14px; line-height: 1.5; color: #555;">${questionsList}</div>
+          </div>
           
-          <p>This should take about 15-20 minutes to complete, and you can save your progress and return anytime.</p>
+          <p style="font-size: 16px; line-height: 1.6;">This should take about 15-20 minutes to complete, and you can save your progress and return anytime.</p>
           
-          <p>Thank you for sharing your precious memories with us.</p>
+          <p style="font-size: 16px; line-height: 1.6;">Thank you for sharing your precious memories with us.</p>
           
-          <p>Warm regards,<br>The Life Story Team</p>
+          <p style="font-size: 16px; line-height: 1.6;">Warm regards,<br>The Life Story Team</p>
           
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-          <p style="font-size: 12px; color: #666;">
-            If you have any questions, please contact us at support@lifestory.app
+          <hr style="margin: 40px 0; border: none; border-top: 1px solid #eee;">
+          <p style="font-size: 12px; color: #666; text-align: center;">
+            If you have any questions, please contact us at support@lifestory.app<br>
+            This invitation was sent by ${senderName || 'a family member'} on your behalf.
           </p>
         </div>
       `
@@ -104,7 +110,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         messageId: result.messageId,
-        inviteLink: inviteLink 
+        inviteLink: inviteLink,
+        questionsCount: questions?.length || 5
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

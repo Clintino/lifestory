@@ -1,60 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, PencilLine, Loader2 } from 'lucide-react';
+import { User, Mail, PencilLine, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import PageTransition from '../components/ui/PageTransition';
 import ProgressIndicator from '../components/ui/ProgressIndicator';
 import Button from '../components/ui/Button';
+import type { Question } from '../data/questions';
 
 const steps = [
   { id: 1, label: 'Choose Relationship' },
   { id: 2, label: 'Create Profile' },
-  { id: 3, label: 'Tell Story' },
-  { id: 4, label: 'Preview' },
-];
-
-const prompts = [
-  { id: 'childhood', question: 'What was their childhood like?' },
-  { id: 'achievement', question: 'What is their proudest achievement?' },
-  { id: 'challenge', question: 'What is a challenge they overcame?' },
-  { id: 'traditions', question: 'What are some traditions they value?' },
-  { id: 'wisdom', question: 'What wisdom would they like to pass on?' },
+  { id: 3, label: 'Select Questions' },
+  { id: 4, label: 'Tell Story' },
+  { id: 5, label: 'Preview' },
 ];
 
 const StoryInputPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('text');
-  const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
+  const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
   const [email, setEmail] = useState('');
   const [isInvitationSent, setIsInvitationSent] = useState(false);
   const [isSendingInvitation, setIsSendingInvitation] = useState(false);
   const [invitationError, setInvitationError] = useState('');
 
   useEffect(() => {
+    // Load selected questions
+    const savedQuestions = localStorage.getItem('selectedQuestions');
+    if (savedQuestions) {
+      setSelectedQuestions(JSON.parse(savedQuestions));
+    } else {
+      // If no questions selected, redirect back to question selection
+      navigate('/question-selection');
+      return;
+    }
+
+    // Load saved responses
     const savedResponses = localStorage.getItem('storyResponses');
     if (savedResponses) {
       setResponses(JSON.parse(savedResponses));
     }
-  }, []);
+  }, [navigate]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (selectedQuestions.length === 0) return;
+    
+    const currentQuestion = selectedQuestions[currentQuestionIndex];
     const newResponses = {
       ...responses,
-      [prompts[currentPromptIndex].id]: e.target.value
+      [currentQuestion.id]: e.target.value
     };
     setResponses(newResponses);
     localStorage.setItem('storyResponses', JSON.stringify(newResponses));
   };
 
-  const handleNextPrompt = () => {
-    if (currentPromptIndex < prompts.length - 1) {
-      setCurrentPromptIndex(currentPromptIndex + 1);
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < selectedQuestions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
 
-  const handlePrevPrompt = () => {
-    if (currentPromptIndex > 0) {
-      setCurrentPromptIndex(currentPromptIndex - 1);
+  const handlePrevQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
 
@@ -81,7 +90,8 @@ const StoryInputPage: React.FC = () => {
         body: JSON.stringify({
           email: email,
           profileName: profileData.name || 'your loved one',
-          senderName: 'A family member' // You could collect this from user
+          senderName: 'A family member',
+          questions: selectedQuestions
         }),
       });
 
@@ -107,16 +117,29 @@ const StoryInputPage: React.FC = () => {
     }
   };
 
-  const currentPrompt = prompts[currentPromptIndex];
-  const currentResponse = responses[currentPrompt.id] || '';
+  if (selectedQuestions.length === 0) {
+    return null; // Will redirect in useEffect
+  }
+
+  const currentQuestion = selectedQuestions[currentQuestionIndex];
+  const currentResponse = responses[currentQuestion.id] || '';
+  const answeredCount = selectedQuestions.filter(q => responses[q.id]?.trim()).length;
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'text':
         return (
           <div className="space-y-6">
-            <div className="bg-indigo-50 p-4 rounded-lg mb-4">
-              <p className="font-medium text-xl text-center">{currentPrompt.question}</p>
+            <div className="bg-indigo-50 p-6 rounded-lg mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-indigo-600 font-medium">
+                  Question {currentQuestionIndex + 1} of {selectedQuestions.length}
+                </span>
+                <span className="text-sm text-indigo-600">
+                  {answeredCount} answered
+                </span>
+              </div>
+              <p className="font-medium text-xl text-center">{currentQuestion.text}</p>
             </div>
             
             <textarea
@@ -129,14 +152,18 @@ const StoryInputPage: React.FC = () => {
             <div className="flex justify-between">
               <Button
                 variant="outline"
-                onClick={handlePrevPrompt}
-                disabled={currentPromptIndex === 0}
+                onClick={handlePrevQuestion}
+                disabled={currentQuestionIndex === 0}
+                icon={<ArrowLeft size={16} />}
               >
-                Previous Question
+                Previous
               </Button>
               
-              {currentPromptIndex < prompts.length - 1 ? (
-                <Button onClick={handleNextPrompt}>
+              {currentQuestionIndex < selectedQuestions.length - 1 ? (
+                <Button 
+                  onClick={handleNextQuestion}
+                  icon={<ArrowRight size={16} />}
+                >
                   Next Question
                 </Button>
               ) : (
@@ -146,20 +173,34 @@ const StoryInputPage: React.FC = () => {
               )}
             </div>
             
-            <div className="flex justify-center gap-2 pt-4">
-              {prompts.map((_, index) => (
+            {/* Question navigation dots */}
+            <div className="flex justify-center gap-2 pt-4 flex-wrap">
+              {selectedQuestions.map((question, index) => (
                 <button
-                  key={index}
-                  className={`w-3 h-3 rounded-full ${
-                    index === currentPromptIndex
+                  key={question.id}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    index === currentQuestionIndex
                       ? 'bg-indigo-600'
-                      : responses[prompts[index].id]
+                      : responses[question.id]?.trim()
                       ? 'bg-indigo-300'
                       : 'bg-neutral-300'
                   }`}
-                  onClick={() => setCurrentPromptIndex(index)}
+                  onClick={() => setCurrentQuestionIndex(index)}
+                  title={`Question ${index + 1}: ${question.text.substring(0, 50)}...`}
                 />
               ))}
+            </div>
+            
+            {/* Progress summary */}
+            <div className="text-center text-sm text-neutral-600">
+              <p>
+                {answeredCount} of {selectedQuestions.length} questions answered
+                {answeredCount > 0 && (
+                  <span className="ml-2 text-indigo-600">
+                    ({Math.round((answeredCount / selectedQuestions.length) * 100)}% complete)
+                  </span>
+                )}
+              </p>
             </div>
           </div>
         );
@@ -172,7 +213,7 @@ const StoryInputPage: React.FC = () => {
                 Invite your loved one to tell their own story
               </h3>
               <p className="text-neutral-600">
-                We'll send them a personalized email with questions they can answer directly.
+                We'll send them a personalized email with the {selectedQuestions.length} questions you've selected.
               </p>
             </div>
             
@@ -191,15 +232,17 @@ const StoryInputPage: React.FC = () => {
                 disabled={isSendingInvitation}
               />
               
-              <h4 className="font-medium mb-2 text-sm text-neutral-700">Preview of Questions:</h4>
-              <ul className="space-y-2 mb-4">
-                {prompts.map((prompt, index) => (
-                  <li key={index} className="text-sm text-neutral-600 flex items-start">
-                    <span className="mr-2 mt-0.5">•</span>
-                    <span>{prompt.question}</span>
-                  </li>
+              <h4 className="font-medium mb-2 text-sm text-neutral-700">
+                Selected Questions ({selectedQuestions.length}):
+              </h4>
+              <div className="max-h-40 overflow-y-auto mb-4 space-y-1">
+                {selectedQuestions.map((question, index) => (
+                  <div key={question.id} className="text-sm text-neutral-600 flex items-start">
+                    <span className="mr-2 mt-0.5 text-indigo-500 font-medium">{index + 1}.</span>
+                    <span>{question.text}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
               
               <Button
                 className="w-full"
@@ -213,7 +256,7 @@ const StoryInputPage: React.FC = () => {
               {isInvitationSent && (
                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
                   <p className="text-green-700 text-sm text-center">
-                    ✓ Invitation sent to {email}! They'll receive an email with a personalized link to answer the questions.
+                    ✓ Invitation sent to {email}! They'll receive an email with a personalized link to answer the {selectedQuestions.length} questions you selected.
                   </p>
                 </div>
               )}
@@ -243,14 +286,25 @@ const StoryInputPage: React.FC = () => {
   return (
     <PageTransition>
       <div className="container mx-auto px-4 pt-24 pb-16">
-        <ProgressIndicator steps={steps} currentStep={3} />
+        <ProgressIndicator steps={steps} currentStep={4} />
 
         <div className="max-w-2xl mx-auto">
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-center mb-2">
-            Tell us their story
-          </h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="font-serif text-3xl md:text-4xl font-bold">
+              Tell us their story
+            </h1>
+            <Button
+              variant="outline"
+              size="sm"
+              to="/question-selection"
+              icon={<ArrowLeft size={16} />}
+            >
+              Edit Questions
+            </Button>
+          </div>
+          
           <p className="text-neutral-600 text-center mb-8">
-            Choose how you'd like to capture this story.
+            Answer the {selectedQuestions.length} questions you've selected, or invite them to answer directly.
           </p>
 
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
@@ -265,7 +319,7 @@ const StoryInputPage: React.FC = () => {
               >
                 <div className="flex justify-center items-center">
                   <PencilLine size={18} className="mr-2" />
-                  Answer Prompts
+                  Answer Questions
                 </div>
               </button>
               
@@ -279,7 +333,7 @@ const StoryInputPage: React.FC = () => {
               >
                 <div className="flex justify-center items-center">
                   <Mail size={18} className="mr-2" />
-                  Send Link
+                  Send Invitation
                 </div>
               </button>
             </div>

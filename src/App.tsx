@@ -9,6 +9,7 @@ import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import ChooseRelationshipPage from './pages/ChooseRelationshipPage';
 import CreateProfilePage from './pages/CreateProfilePage';
+import QuestionSelectionPage from './pages/QuestionSelectionPage';
 import StoryInputPage from './pages/StoryInputPage';
 import PreviewSummaryPage from './pages/PreviewSummaryPage';
 import PremiumUpgradePage from './pages/PremiumUpgradePage';
@@ -24,6 +25,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="choose-relationship" element={<ChooseRelationshipPage />} />
           <Route path="create-profile" element={<CreateProfilePage />} />
+          <Route path="question-selection" element={<QuestionSelectionPage />} />
           <Route path="story-input" element={<StoryInputPage />} />
           <Route path="preview" element={<PreviewSummaryPage />} />
           <Route path="upgrade" element={<PremiumUpgradePage />} />

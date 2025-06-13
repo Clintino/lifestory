@@ -8,8 +8,9 @@ import Button from '../components/ui/Button';
 const steps = [
   { id: 1, label: 'Choose Relationship' },
   { id: 2, label: 'Create Profile' },
-  { id: 3, label: 'Tell Story' },
-  { id: 4, label: 'Preview' },
+  { id: 3, label: 'Select Questions' },
+  { id: 4, label: 'Tell Story' },
+  { id: 5, label: 'Preview' },
 ];
 
 const CreateProfilePage: React.FC = () => {
@@ -43,12 +44,12 @@ const CreateProfilePage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Store form data and images in localStorage or state management
+    // Store form data and images in localStorage
     localStorage.setItem('profileData', JSON.stringify({
       ...formData,
       images: images.map(img => img.url)
     }));
-    navigate('/story-input');
+    navigate('/question-selection');
   };
 
   return (
@@ -170,7 +171,7 @@ const CreateProfilePage: React.FC = () => {
                 type="submit"
                 disabled={!formData.name}
               >
-                Next: Begin Story
+                Next: Select Questions
               </Button>
             </div>
           </form>
