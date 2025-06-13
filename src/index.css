@@ -17,7 +17,7 @@
 }
 
 /* Add web fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap');
 
 /* Custom animations */
 @keyframes float {
@@ -30,7 +30,140 @@
   animation: float 6s ease-in-out infinite;
 }
 
+@keyframes confetti {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+}
+
+.animate-confetti {
+  animation: confetti 3s ease-out forwards;
+}
+
+@keyframes page-flip {
+  0% { transform: rotateY(0deg); }
+  50% { transform: rotateY(-15deg); }
+  100% { transform: rotateY(0deg); }
+}
+
+.animate-page-flip {
+  animation: page-flip 2s ease-in-out infinite;
+}
+
 /* Custom utilities */
 .text-balance {
   text-wrap: balance;
+}
+
+/* Wood grain texture */
+.wood-grain {
+  background-image: 
+    linear-gradient(90deg, rgba(139, 69, 19, 0.1) 50%, transparent 50%),
+    linear-gradient(rgba(160, 82, 45, 0.1) 50%, transparent 50%);
+  background-size: 20px 20px, 20px 20px;
+}
+
+/* Linen texture for book */
+.linen-texture {
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+/* Vinyl record effect */
+.vinyl-record {
+  background: radial-gradient(circle at center, #1a1a1a 30%, #333 31%, #333 40%, #1a1a1a 41%);
+  position: relative;
+}
+
+.vinyl-record::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+/* Button micro-interactions */
+.btn-bounce {
+  transition: all 0.2s ease;
+}
+
+.btn-bounce:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.btn-bounce:active {
+  transform: translateY(0);
+}
+
+/* Page curl cursor */
+.page-curl-cursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23333' d='M13 3L16.5 6.5L13 10L11.5 8.5L13.5 6.5L11.5 4.5L13 3M6 14L9.5 17.5L6 21L4.5 19.5L6.5 17.5L4.5 15.5L6 14Z'/%3E%3C/svg%3E") 12 12, pointer;
+}
+
+/* Blur reveal effect */
+.blur-reveal {
+  transition: filter 0.3s ease;
+  cursor: pointer;
+}
+
+.blur-reveal:hover {
+  filter: blur(0px) !important;
+}
+
+/* Progress bar animation */
+.progress-bar {
+  background: linear-gradient(90deg, #6B5BFF 0%, #8B5CF6 100%);
+  height: 4px;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .book-frame {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .polaroid-photo {
+    float: none !important;
+    margin: 1rem auto;
+    display: block;
+  }
+  
+  .sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+  }
+}
+
+/* Testimonial carousel */
+.testimonial-carousel {
+  animation: slide 15s infinite;
+}
+
+@keyframes slide {
+  0%, 30% { transform: translateY(0); }
+  33%, 63% { transform: translateY(-33.33%); }
+  66%, 96% { transform: translateY(-66.66%); }
+  100% { transform: translateY(0); }
 }
