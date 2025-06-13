@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, Users, Shield, Download, Share2, Lock, ChevronRight, Edit } from 'lucide-react';
+import { Star, Users, Shield, Download, Share2, Lock, ChevronRight, Edit, Loader2 } from 'lucide-react';
 import PageTransition from '../components/ui/PageTransition';
 import ProgressIndicator from '../components/ui/ProgressIndicator';
 import Button from '../components/ui/Button';
+import { generateStoryContent, generateDynamicQuote } from '../lib/openai';
 
 const steps = [
   { id: 1, label: 'Choose Relationship' },
@@ -32,20 +33,50 @@ const PreviewSummaryPage: React.FC = () => {
   const [profileData, setProfileData] = useState<any>(null);
   const [showCTA, setShowCTA] = useState(false);
   const [dynamicQuote, setDynamicQuote] = useState('');
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [generationError, setGenerationError] = useState('');
 
   useEffect(() => {
-    // Get profile data and story responses from localStorage
-    const profile = JSON.parse(localStorage.getItem('profileData') || '{}');
-    const responses = JSON.parse(localStorage.getItem('storyResponses') || '{}');
-    setProfileData(profile);
+    const generateStory = async () => {
+      try {
+        setIsGenerating(true);
+        setGenerationError('');
 
-    // Generate story content based on responses
-    const content = generateStoryContent(profile, responses);
-    setStoryContent(content);
+        // Get data from localStorage
+        const profile = JSON.parse(localStorage.getItem('profileData') || '{}');
+        const responses = JSON.parse(localStorage.getItem('storyResponses') || '{}');
+        const relationshipData = JSON.parse(localStorage.getItem('relationshipData') || '{}');
+        const selectedQuestions = JSON.parse(localStorage.getItem('selectedQuestions') || '[]');
+        
+        setProfileData(profile);
 
-    // Generate dynamic quote from responses
-    const quote = generateDynamicQuote(responses);
-    setDynamicQuote(quote);
+        // Generate story content using OpenAI
+        const content = await generateStoryContent(responses, profile, {
+          isPreview: true,
+          relationship: relationshipData.relationship,
+          selectedQuestions: selectedQuestions
+        });
+        setStoryContent(content);
+
+        // Generate dynamic quote
+        const quote = await generateDynamicQuote(responses);
+        setDynamicQuote(quote);
+
+      } catch (error) {
+        console.error('Error generating story:', error);
+        setGenerationError('Failed to generate story. Please try again.');
+        
+        // Fallback content
+        const profile = JSON.parse(localStorage.getItem('profileData') || '{}');
+        const name = profile?.name || 'our loved one';
+        setStoryContent(`${name} has lived a life rich with experiences and memories that deserve to be preserved. These stories and memories are more than just tales from the past - they are the threads that weave together our family's tapestry, connecting generations through shared experiences and values.`);
+        setDynamicQuote("Every life has a story worth telling...");
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    generateStory();
 
     // Show CTA after scroll
     const handleScroll = () => {
@@ -59,71 +90,31 @@ const PreviewSummaryPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const generateDynamicQuote = (responses: any) => {
-    // Extract a meaningful quote from the user's responses
-    const responseValues = Object.values(responses).filter(r => typeof r === 'string' && r.trim().length > 0);
-    
-    if (responseValues.length === 0) {
-      return "Every life has a story worth telling...";
+  const handleRegenerateStory = async () => {
+    setIsGenerating(true);
+    setGenerationError('');
+
+    try {
+      const profile = JSON.parse(localStorage.getItem('profileData') || '{}');
+      const responses = JSON.parse(localStorage.getItem('storyResponses') || '{}');
+      const relationshipData = JSON.parse(localStorage.getItem('relationshipData') || '{}');
+      const selectedQuestions = JSON.parse(localStorage.getItem('selectedQuestions') || '[]');
+
+      const content = await generateStoryContent(responses, profile, {
+        isPreview: true,
+        relationship: relationshipData.relationship,
+        selectedQuestions: selectedQuestions
+      });
+      setStoryContent(content);
+
+      const quote = await generateDynamicQuote(responses);
+      setDynamicQuote(quote);
+    } catch (error) {
+      console.error('Error regenerating story:', error);
+      setGenerationError('Failed to regenerate story. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
-
-    // Try to find a quote-worthy sentence from responses
-    for (const response of responseValues) {
-      const sentences = (response as string).split(/[.!?]+/).filter(s => s.trim().length > 20);
-      for (const sentence of sentences) {
-        const trimmed = sentence.trim();
-        // Look for sentences that sound personal or meaningful
-        if (trimmed.length > 30 && trimmed.length < 120 && 
-            (trimmed.toLowerCase().includes('remember') || 
-             trimmed.toLowerCase().includes('always') ||
-             trimmed.toLowerCase().includes('never forget') ||
-             trimmed.toLowerCase().includes('taught me') ||
-             trimmed.toLowerCase().includes('learned'))) {
-          return trimmed + (trimmed.endsWith('.') ? '' : '...');
-        }
-      }
-    }
-
-    // Fallback to first meaningful sentence
-    const firstResponse = responseValues[0] as string;
-    const firstSentence = firstResponse.split(/[.!?]+/)[0].trim();
-    if (firstSentence.length > 20 && firstSentence.length < 120) {
-      return firstSentence + '...';
-    }
-
-    return "A life filled with precious memories and wisdom...";
-  };
-
-  const generateStoryContent = (profile: any, responses: any) => {
-    const name = profile?.name || 'our loved one';
-    const birthYear = profile?.birthYear ? ` born in ${profile.birthYear}` : '';
-    
-    // Create a more personalized story based on actual responses
-    const responseValues = Object.values(responses).filter(r => typeof r === 'string' && r.trim().length > 0);
-    
-    if (responseValues.length === 0) {
-      return `${name}${birthYear} has lived a life rich with experiences and memories that deserve to be preserved. Growing up in a time when the world was different, their childhood was filled with moments that shaped who they would become. One of their proudest achievements stands as a testament to their character and determination. Life wasn't always easy, but they faced challenges with remarkable resilience. Family traditions have always held a special place in their heart. To future generations, they wish to pass on wisdom that has guided them through life's journey.`;
-    }
-
-    // Build story from actual responses
-    let story = `${name}${birthYear} has lived a life rich with experiences and memories that deserve to be preserved. `;
-    
-    // Add content from responses, taking first few sentences from each
-    responseValues.forEach((response, index) => {
-      if (index < 3) { // Limit to first 3 responses for preview
-        const sentences = (response as string).split(/[.!?]+/).filter(s => s.trim().length > 10);
-        if (sentences.length > 0) {
-          const firstSentence = sentences[0].trim();
-          if (firstSentence.length > 0) {
-            story += firstSentence + (firstSentence.endsWith('.') ? ' ' : '. ');
-          }
-        }
-      }
-    });
-
-    story += 'These stories and memories are more than just tales from the past - they are the threads that weave together our family\'s tapestry, connecting generations through shared experiences and values.';
-
-    return story;
   };
 
   return (
@@ -152,68 +143,100 @@ const PreviewSummaryPage: React.FC = () => {
 
                 {/* Page content */}
                 <div className="p-8 md:p-12">
-                  {/* Opening pull quote - now dynamic */}
-                  <div className="relative mb-8 text-center">
-                    <svg className="absolute inset-0 w-full h-full text-neutral-100 -z-10" viewBox="0 0 100 100">
-                      <text x="50" y="50" fontSize="60" textAnchor="middle" dominantBaseline="middle" fill="currentColor" opacity="0.3">"</text>
-                    </svg>
-                    <blockquote className="text-2xl font-serif italic text-neutral-700 relative z-10">
-                      "{dynamicQuote}"
-                    </blockquote>
-                  </div>
-
-                  {/* Story content */}
-                  <div className="prose max-w-none">
-                    <h1 className="font-serif text-3xl font-bold text-neutral-800 mb-6">
-                      {profileData?.name || "Their"} Life Story
-                    </h1>
-                    
-                    {/* Polaroid photo */}
-                    {profileData?.images?.[0] && (
-                      <div className="float-right ml-6 mb-4 transform rotate-1 hover:rotate-0 transition-transform duration-300">
-                        <div className="bg-white p-3 shadow-lg border border-neutral-200" style={{ width: '200px' }}>
-                          <img
-                            src={profileData.images[0]}
-                            alt={profileData?.name}
-                            className="w-full h-32 object-cover"
-                          />
-                          <p className="text-xs text-center mt-2 font-handwriting text-neutral-600">
-                            {profileData?.name} • {profileData?.birthYear || 'Beloved'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Story text - fully visible, no blurs */}
-                    <div className="text-neutral-700 leading-relaxed space-y-4">
-                      {storyContent.split('. ').filter(s => s.length > 0).map((sentence, index) => (
-                        <p key={index} className="text-base">
-                          {sentence}{sentence.endsWith('.') ? '' : '.'} 
-                        </p>
-                      ))}
-                    </div>
-
-                    {/* Preview indicator */}
-                    <div className="mt-8 flex justify-end">
-                      <div className="bg-neutral-100 px-3 py-1 rounded-full text-sm text-neutral-600">
-                        Preview • Page 1 only
-                      </div>
-                    </div>
-
-                    {/* Preview end notice */}
-                    <div className="mt-8 p-6 bg-gradient-to-r from-neutral-50 to-neutral-100 rounded-lg border border-neutral-200">
-                      <h3 className="font-serif text-xl font-semibold text-center mb-2">
-                        This is just the beginning...
+                  {isGenerating ? (
+                    <div className="text-center py-12">
+                      <Loader2 size={32} className="animate-spin text-indigo-600 mx-auto mb-4" />
+                      <h3 className="text-xl font-medium text-neutral-700 mb-2">
+                        Crafting your story...
                       </h3>
-                      <p className="text-neutral-600 text-center text-sm">
-                        The complete storybook includes all chapters, photos, and memories beautifully arranged.
+                      <p className="text-neutral-600">
+                        Our AI is weaving together your memories into a beautiful narrative
                       </p>
                     </div>
-                  </div>
-                </div>
+                  ) : (
+                    <>
+                      {/* Opening pull quote - now dynamic */}
+                      <div className="relative mb-8 text-center">
+                        <svg className="absolute inset-0 w-full h-full text-neutral-100 -z-10" viewBox="0 0 100 100">
+                          <text x="50" y="50" fontSize="60" textAnchor="middle" dominantBaseline="middle" fill="currentColor" opacity="0.3">"</text>
+                        </svg>
+                        <blockquote className="text-2xl font-serif italic text-neutral-700 relative z-10">
+                          "{dynamicQuote}"
+                        </blockquote>
+                      </div>
 
-                {/* Subtle page curl effect */}
-                <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-tl from-neutral-200 to-transparent opacity-30 rounded-tl-full transform rotate-180"></div>
+                      {/* Story content */}
+                      <div className="prose max-w-none">
+                        <h1 className="font-serif text-3xl font-bold text-neutral-800 mb-6">
+                          {profileData?.name || "Their"} Life Story
+                        </h1>
+                        
+                        {/* Polaroid photo */}
+                        {profileData?.images?.[0] && (
+                          <div className="float-right ml-6 mb-4 transform rotate-1 hover:rotate-0 transition-transform duration-300">
+                            <div className="bg-white p-3 shadow-lg border border-neutral-200" style={{ width: '200px' }}>
+                              <img
+                                src={profileData.images[0]}
+                                alt={profileData?.name}
+                                className="w-full h-32 object-cover"
+                              />
+                              <p className="text-xs text-center mt-2 font-handwriting text-neutral-600">
+                                {profileData?.name} • {profileData?.birthYear || 'Beloved'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* AI-generated story text */}
+                        <div className="text-neutral-700 leading-relaxed space-y-4">
+                          {storyContent.split('\n\n').filter(paragraph => paragraph.trim().length > 0).map((paragraph, index) => (
+                            <p key={index} className="text-base">
+                              {paragraph.trim()}
+                            </p>
+                          ))}
+                        </div>
+
+                        {/* Preview indicator */}
+                        <div className="mt-8 flex justify-between items-center">
+                          <div className="bg-neutral-100 px-3 py-1 rounded-full text-sm text-neutral-600">
+                            Preview • Page 1 only
+                          </div>
+                          {generationError && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleRegenerateStory}
+                              disabled={isGenerating}
+                              icon={isGenerating ? <Loader2 size={14} className="animate-spin" /> : undefined}
+                            >
+                              {isGenerating ? 'Regenerating...' : 'Regenerate Story'}
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Error message */}
+                        {generationError && (
+                          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                            <p className="text-red-700 text-sm">{generationError}</p>
+                          </div>
+                        )}
+
+                        {/* Preview end notice */}
+                        <div className="mt-8 p-6 bg-gradient-to-r from-neutral-50 to-neutral-100 rounded-lg border border-neutral-200">
+                          <h3 className="font-serif text-xl font-semibold text-center mb-2">
+                            This is just the beginning...
+                          </h3>
+                          <p className="text-neutral-600 text-center text-sm">
+                            The complete storybook includes all chapters, photos, and memories beautifully arranged.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Subtle page curl effect */}
+                  <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-tl from-neutral-200 to-transparent opacity-30 rounded-tl-full transform rotate-180"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -306,7 +329,7 @@ const PreviewSummaryPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <Users size={12} className="text-orange-500" />
-                      <span>AI-Indexed</span>
+                      <span>AI-Enhanced</span>
                     </div>
                   </div>
                 </div>
