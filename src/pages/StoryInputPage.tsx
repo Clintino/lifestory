@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, MicOff, User, Mail, PencilLine, Loader2 } from 'lucide-react';
+import { User, Mail, PencilLine } from 'lucide-react';
 import PageTransition from '../components/ui/PageTransition';
 import ProgressIndicator from '../components/ui/ProgressIndicator';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
 
 const steps = [
   { id: 1, label: 'Choose Relationship' },
@@ -26,111 +25,15 @@ const StoryInputPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('text');
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
-  const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [email, setEmail] = useState('');
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [isInvitationSent, setIsInvitationSent] = useState(false);
 
   useEffect(() => {
     const savedResponses = localStorage.getItem('storyResponses');
     if (savedResponses) {
       setResponses(JSON.parse(savedResponses));
     }
-
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-    };
   }, []);
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100
-        }
-      });
-      
-      streamRef.current = stream;
-      
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm'
-      });
-      
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await transcribeAudio(audioBlob);
-        
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-        }
-      };
-
-      mediaRecorder.start(1000);
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-      alert('Unable to access microphone. Please check your permissions.');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setIsTranscribing(true);
-    }
-  };
-
-  const transcribeAudio = async (audioBlob: Blob) => {
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
-
-      const functionUrl = new URL('/functions/v1/transcribe', import.meta.env.VITE_SUPABASE_URL).toString();
-
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
-        throw new Error(errorData.details || errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      const newResponses = {
-        ...responses,
-        [prompts[currentPromptIndex].id]: result.text,
-      };
-      setResponses(newResponses);
-      localStorage.setItem('storyResponses', JSON.stringify(newResponses));
-    } catch (error) {
-      console.error('Transcription error:', error);
-      alert('Failed to transcribe audio. Please try again or use text input instead.');
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newResponses = {
@@ -153,17 +56,17 @@ const StoryInputPage: React.FC = () => {
     }
   };
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  };
-
   const handleSubmit = () => {
     localStorage.setItem('storyResponses', JSON.stringify(responses));
     navigate('/preview');
+  };
+
+  const handleSendInvitation = () => {
+    // Simulate sending invitation
+    setIsInvitationSent(true);
+    setTimeout(() => {
+      setIsInvitationSent(false);
+    }, 3000);
   };
 
   const currentPrompt = prompts[currentPromptIndex];
@@ -223,105 +126,6 @@ const StoryInputPage: React.FC = () => {
           </div>
         );
         
-      case 'audio':
-        return (
-          <div className="space-y-6 text-center">
-            <div className="bg-indigo-50 p-4 rounded-lg mb-4">
-              <p className="font-medium text-xl">{currentPrompt.question}</p>
-            </div>
-            
-            <div className="bg-white border border-neutral-200 rounded-lg p-8 flex flex-col items-center">
-              <button
-                onClick={toggleRecording}
-                disabled={isTranscribing}
-                className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${
-                  isRecording
-                    ? 'bg-red-100 text-red-500 animate-pulse'
-                    : isTranscribing
-                    ? 'bg-neutral-100 text-neutral-500'
-                    : 'bg-indigo-100 text-indigo-600'
-                }`}
-              >
-                {isTranscribing ? (
-                  <Loader2 size={32} className="animate-spin" />
-                ) : isRecording ? (
-                  <MicOff size={32} />
-                ) : (
-                  <Mic size={32} />
-                )}
-              </button>
-              
-              <p className="font-medium">
-                {isTranscribing
-                  ? 'Transcribing...'
-                  : isRecording
-                  ? 'Recording... Click to stop'
-                  : 'Click to start recording'}
-              </p>
-              
-              <p className="text-sm text-neutral-500 mt-2">
-                {isTranscribing
-                  ? 'Please wait while we process your recording'
-                  : isRecording
-                  ? 'Speak clearly and take your time'
-                  : 'You can re-record as many times as needed'}
-              </p>
-
-              {currentResponse && (
-                <div className="mt-8 w-full">
-                  <p className="text-left font-medium mb-2">Transcription:</p>
-                  <textarea
-                    value={currentResponse}
-                    onChange={handleTextChange}
-                    className="w-full p-4 border border-neutral-300 rounded-lg min-h-32 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Your transcribed text will appear here..."
-                  />
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={handlePrevPrompt}
-                disabled={currentPromptIndex === 0 || isRecording || isTranscribing}
-              >
-                Previous Question
-              </Button>
-              
-              {currentPromptIndex < prompts.length - 1 ? (
-                <Button 
-                  onClick={handleNextPrompt}
-                  disabled={isRecording || isTranscribing}
-                >
-                  Next Question
-                </Button>
-              ) : (
-                <Button 
-                  onClick={handleSubmit}
-                  disabled={isRecording || isTranscribing}
-                >
-                  Generate Life Story
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex justify-center gap-2 pt-4">
-              {prompts.map((_, index) => (
-                <button
-                  key={index}
-                  className={`w-3 h-3 rounded-full ${
-                    index === currentPromptIndex
-                      ? 'bg-indigo-600'
-                      : 'bg-neutral-300'
-                  }`}
-                  onClick={() => setCurrentPromptIndex(index)}
-                />
-              ))}
-            </div>
-          </div>
-        );
-        
       case 'invite':
         return (
           <div className="space-y-6">
@@ -361,9 +165,18 @@ const StoryInputPage: React.FC = () => {
               <Button
                 className="w-full"
                 disabled={!email || !/\S+@\S+\.\S+/.test(email)}
+                onClick={handleSendInvitation}
               >
-                Send Invitation
+                {isInvitationSent ? 'Invitation Sent!' : 'Send Invitation'}
               </Button>
+              
+              {isInvitationSent && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-green-700 text-sm text-center">
+                    ✓ Invitation sent to {email}! They'll receive an email with a link to answer the questions.
+                  </p>
+                </div>
+              )}
             </div>
             
             <div className="text-center">
@@ -405,20 +218,6 @@ const StoryInputPage: React.FC = () => {
                 <div className="flex justify-center items-center">
                   <PencilLine size={18} className="mr-2" />
                   Answer Prompts
-                </div>
-              </button>
-              
-              <button
-                className={`flex-1 py-3 text-center font-medium ${
-                  activeTab === 'audio'
-                    ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
-                    : 'text-neutral-600 hover:bg-neutral-50'
-                }`}
-                onClick={() => setActiveTab('audio')}
-              >
-                <div className="flex justify-center items-center">
-                  <Mic size={18} className="mr-2" />
-                  Record Audio
                 </div>
               </button>
               
