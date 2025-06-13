@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { Download, Share2, Bookmark, Play, Pause, Book, Printer } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Download, Share2, Bookmark, Play, Pause, Book, Printer, ArrowRight } from 'lucide-react';
 import PageTransition from '../components/ui/PageTransition';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 
 const chapters = [
-  { id: 1, title: 'Childhood Memories', content: 'Margaret grew up in a small town in rural Minnesota in the 1950s, where life moved at a slower pace. The daughter of a schoolteacher and a carpenter, she learned the value of education and craftsmanship from an early age. Summers were spent at the lake with her three siblings, catching fireflies and learning to swim in the cool, clear water...' },
-  { id: 2, title: 'Coming of Age', content: 'In her teenage years, Margaret developed a passion for literature and music. She joined the school choir and discovered her beautiful singing voice, a talent that would bring joy to many throughout her life. Her English teacher, Mrs. Peterson, recognized her gift for writing and encouraged her to keep a journal...' },
-  { id: 3, title: 'Love and Family', content: 'Margaret met John at a community dance in the summer of 1968. His quiet confidence and kind smile caught her attention immediately. They were married within a year, beginning a partnership that would span five decades. Together they built a home filled with laughter, music, and the delicious aroma of Margaret\'s famous apple pies...' },
+  { id: 1, title: 'Childhood Memories', preview: 'Margaret grew up in a small town in rural Minnesota in the 1950s, where life moved at a slower pace...' },
+  { id: 2, title: 'Coming of Age', preview: 'In her teenage years, Margaret developed a passion for literature and music...' },
+  { id: 3, title: 'Love and Family', preview: 'Margaret met John at a community dance in the summer of 1968...' },
+  { id: 4, title: 'Life\'s Work', preview: 'After raising her children, Margaret discovered new passions and purposes...' },
+  { id: 5, title: 'Wisdom & Legacy', preview: 'At seventy-eight, Margaret reflects on a life well-lived...' },
 ];
 
 const StorybookDisplayPage: React.FC = () => {
+  const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -18,10 +22,14 @@ const StorybookDisplayPage: React.FC = () => {
     setIsPlaying(!isPlaying);
   };
 
+  const viewFullStorybook = () => {
+    navigate('/digital-story/margaret-johnson');
+  };
+
   return (
     <PageTransition>
       <div className="container mx-auto px-4 pt-24 pb-16">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center mb-8">
             <h1 className="font-serif text-3xl md:text-4xl font-bold mb-4 md:mb-0">
               Margaret's Life Story
@@ -90,13 +98,13 @@ const StorybookDisplayPage: React.FC = () => {
                   <ul className="space-y-2">
                     {chapters.map((chapter) => (
                       <li key={chapter.id}>
-                        <a 
-                          href={`#chapter-${chapter.id}`}
-                          className="text-indigo-600 hover:text-indigo-800 text-sm flex items-center"
+                        <button 
+                          onClick={viewFullStorybook}
+                          className="text-indigo-600 hover:text-indigo-800 text-sm flex items-center w-full text-left"
                         >
                           <Book size={14} className="mr-2" />
                           Chapter {chapter.id}: {chapter.title}
-                        </a>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -107,33 +115,40 @@ const StorybookDisplayPage: React.FC = () => {
             <div className="md:col-span-2">
               <Card className="mb-8">
                 <div className="p-6">
-                  {chapters.map((chapter) => (
-                    <div key={chapter.id} id={`chapter-${chapter.id}`} className="mb-8">
-                      <h2 className="font-serif text-2xl font-semibold mb-4">
+                  <h2 className="font-serif text-2xl font-semibold mb-6 text-center">
+                    Story Preview
+                  </h2>
+                  
+                  {chapters.slice(0, 3).map((chapter) => (
+                    <div key={chapter.id} className="mb-6 pb-6 border-b border-neutral-200 last:border-b-0">
+                      <h3 className="font-serif text-xl font-semibold mb-3">
                         Chapter {chapter.id}: {chapter.title}
-                      </h2>
-                      <p className="text-neutral-700 leading-relaxed">
-                        {chapter.content}
+                      </h3>
+                      <p className="text-neutral-700 leading-relaxed mb-3">
+                        {chapter.preview}
                       </p>
-                      
-                      {chapter.id === 1 && (
-                        <div className="my-4 border rounded-lg overflow-hidden">
-                          <img
-                            src="https://images.pexels.com/photos/7116214/pexels-photo-7116214.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                            alt="Margaret as a child"
-                            className="w-full h-48 object-cover"
-                          />
-                          <div className="p-2 bg-neutral-50 text-sm text-neutral-600 text-center">
-                            Margaret at her family's lake house, 1952
-                          </div>
-                        </div>
-                      )}
-                      
-                      {chapter.id !== chapters.length && (
-                        <div className="border-b border-neutral-200 mt-8"></div>
-                      )}
+                      <Button
+                        variant="text"
+                        size="sm"
+                        onClick={viewFullStorybook}
+                        icon={<ArrowRight size={14} />}
+                        className="text-indigo-600"
+                      >
+                        Read Full Chapter
+                      </Button>
                     </div>
                   ))}
+                  
+                  <div className="text-center mt-8">
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={viewFullStorybook}
+                      icon={<Book size={18} />}
+                    >
+                      Read Complete Story
+                    </Button>
+                  </div>
                 </div>
               </Card>
               

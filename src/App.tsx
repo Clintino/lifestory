@@ -16,6 +16,7 @@ import PreviewSummaryPage from './pages/PreviewSummaryPage';
 import PremiumUpgradePage from './pages/PremiumUpgradePage';
 import PaymentPage from './pages/PaymentPage';
 import StorybookDisplayPage from './pages/StorybookDisplayPage';
+import DigitalStorybookPage from './pages/DigitalStorybookPage';
 import ThankYouPage from './pages/ThankYouPage';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
           <Route path="upgrade" element={<PremiumUpgradePage />} />
           <Route path="payment" element={<PaymentPage />} />
           <Route path="storybook" element={<StorybookDisplayPage />} />
+          <Route path="digital-story/:id" element={<DigitalStorybookPage />} />
           <Route path="thank-you" element={<ThankYouPage />} />
         </Route>
       </Routes>
