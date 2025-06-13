@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, User, Users, Smile } from 'lucide-react';
+import { Heart, User, Users, Smile, BookOpen } from 'lucide-react';
 import PageTransition from '../components/ui/PageTransition';
 import ProgressIndicator from '../components/ui/ProgressIndicator';
 import Button from '../components/ui/Button';
@@ -12,6 +12,7 @@ const relationships = [
   { id: 'grandparent', label: 'Grandparent', icon: <Users size={28} /> },
   { id: 'spouse', label: 'Spouse', icon: <Heart size={28} /> },
   { id: 'sibling', label: 'Sibling', icon: <User size={28} /> },
+  { id: 'myself', label: 'Myself', icon: <BookOpen size={28} /> },
   { id: 'other', label: 'Other', icon: <Smile size={28} /> },
 ];
 
@@ -40,6 +41,20 @@ const ChooseRelationshipPage: React.FC = () => {
     }
   };
 
+  const getPageTitle = () => {
+    if (selectedRelationship === 'myself') {
+      return 'Tell your own story';
+    }
+    return 'Who is this story about?';
+  };
+
+  const getPageDescription = () => {
+    if (selectedRelationship === 'myself') {
+      return 'Create a beautiful digital autobiography to share with your family and preserve your legacy.';
+    }
+    return 'Choose the relationship you have with the person whose story you want to preserve.';
+  };
+
   return (
     <PageTransition>
       <div className="container mx-auto px-4 pt-24 pb-16">
@@ -47,10 +62,10 @@ const ChooseRelationshipPage: React.FC = () => {
 
         <div className="max-w-2xl mx-auto">
           <h1 className="font-serif text-3xl md:text-4xl font-bold text-center mb-2">
-            Who is this story about?
+            {getPageTitle()}
           </h1>
           <p className="text-neutral-600 text-center mb-8">
-            Choose the relationship you have with the person whose story you want to preserve.
+            {getPageDescription()}
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
@@ -92,6 +107,16 @@ const ChooseRelationshipPage: React.FC = () => {
             </div>
           )}
 
+          {selectedRelationship === 'myself' && (
+            <div className="mb-8 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+              <h3 className="font-medium text-indigo-800 mb-2">✨ Writing Your Own Story</h3>
+              <p className="text-sm text-indigo-700">
+                You'll be creating a personal autobiography that captures your life experiences, memories, and wisdom. 
+                This will be a beautiful legacy to share with your family and future generations.
+              </p>
+            </div>
+          )}
+
           <div className="flex justify-center">
             <Button
               variant="primary"
@@ -99,7 +124,7 @@ const ChooseRelationshipPage: React.FC = () => {
               onClick={handleNext}
               disabled={!selectedRelationship || (selectedRelationship === 'other' && !customRelationship)}
             >
-              Next: Create Profile
+              {selectedRelationship === 'myself' ? 'Start My Story' : 'Next: Create Profile'}
             </Button>
           </div>
         </div>
