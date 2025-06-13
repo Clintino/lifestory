@@ -51,9 +51,7 @@ const specialStory = {
   title: "His Last Letter",
   quote: "We lost Dad last year. But hearing his voice, telling us how he met Mom at a dance, and how nervous he was to hold her hand... it gave my kids the grandfather they never got to meet.",
   author: "James, Seattle",
-  emoji: "😢",
-  audioLength: "2 min",
-  hasLetter: true
+  emoji: "😢"
 };
 
 const testimonials = [
@@ -85,11 +83,6 @@ const testimonials = [
 
 const ExamplesPage: React.FC = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [playingSpecialAudio, setPlayingSpecialAudio] = useState(false);
-
-  const toggleSpecialAudio = () => {
-    setPlayingSpecialAudio(!playingSpecialAudio);
-  };
 
   return (
     <PageTransition>
@@ -122,45 +115,9 @@ const ExamplesPage: React.FC = () => {
                   "{specialStory.quote}"
                 </blockquote>
                 
-                <p className="text-center text-neutral-600 font-medium mb-8">
+                <p className="text-center text-neutral-600 font-medium">
                   — {specialStory.author}
                 </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                  <button
-                    onClick={toggleSpecialAudio}
-                    className="flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors"
-                  >
-                    {playingSpecialAudio ? (
-                      <Pause size={20} />
-                    ) : (
-                      <Play size={20} />
-                    )}
-                    <span className="font-medium">
-                      {playingSpecialAudio ? 'Pause' : 'Play'} the recorded memory ({specialStory.audioLength})
-                    </span>
-                  </button>
-                  
-                  <Button
-                    variant="outline"
-                    className="border-indigo-500 text-indigo-600 hover:bg-indigo-50"
-                    icon={<BookOpen size={18} />}
-                  >
-                    Read the letter he recorded
-                  </Button>
-                </div>
-
-                {playingSpecialAudio && (
-                  <div className="mt-6 bg-white rounded-lg p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Volume2 size={16} className="text-indigo-600" />
-                      <span className="text-sm font-medium text-neutral-700">Playing: Dad's Dance Story</span>
-                    </div>
-                    <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-600 rounded-full animate-pulse" style={{ width: '45%' }}></div>
-                    </div>
-                  </div>
-                )}
               </Card>
             </div>
           </div>
