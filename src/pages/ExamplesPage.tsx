@@ -34,6 +34,16 @@ const exampleStories = [
     emoji: "💕",
     followUp: "Everything before that was just practice.",
     category: "Family"
+  },
+  {
+    id: 4,
+    quote: "I kept every letter you wrote me from summer camp.",
+    name: "Dad Michael",
+    age: 71,
+    location: "Texas",
+    emoji: "📝",
+    followUp: "Even the one where you misspelled 'homesick' as 'home-stick.'",
+    category: "Memories"
   }
 ];
 
@@ -70,33 +80,6 @@ const testimonials = [
     author: "Lisa, daughter of Robert",
     rating: 5,
     emoji: "🎁"
-  }
-];
-
-const impactStories = [
-  {
-    title: "Reconnected two sisters after 30 years apart",
-    description: "When Maria shared her mother's story about family traditions, her estranged sister reached out after reading it. They're planning their first reunion this Christmas.",
-    image: "https://images.pexels.com/photos/8471016/pexels-photo-8471016.jpeg?auto=compress&cs=tinysrgb&w=800",
-    cta: "Read this storybook"
-  },
-  {
-    title: "Helped a grandchild write their college essay",
-    description: "Tommy used his grandfather's immigration story as inspiration for his college application. He got into his dream school and credits Grandpa's courage for showing him the way.",
-    image: "https://images.pexels.com/photos/5212317/pexels-photo-5212317.jpeg?auto=compress&cs=tinysrgb&w=800",
-    cta: "Read this storybook"
-  },
-  {
-    title: "Became a digital will for a grandfather with Alzheimer's",
-    description: "Before his memory faded, Frank recorded his life lessons and family history. Now his grandchildren can hear his wisdom whenever they need guidance.",
-    image: "https://images.pexels.com/photos/8471011/pexels-photo-8471011.jpeg?auto=compress&cs=tinysrgb&w=800",
-    cta: "Read this storybook"
-  },
-  {
-    title: "Helped preserve a voice before someone passed",
-    description: "Margaret's family created her story just months before she passed. Her great-grandchildren, born after she was gone, still get to hear her voice and know her love.",
-    image: "https://images.pexels.com/photos/8471009/pexels-photo-8471009.jpeg?auto=compress&cs=tinysrgb&w=800",
-    cta: "Read this storybook"
   }
 ];
 
@@ -183,25 +166,27 @@ const ExamplesPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Emotional Impact Grid */}
+        {/* Emotional Impact Grid - All 4 Stories */}
         <section className="py-16">
           <div className="container mx-auto px-4">
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-center text-neutral-800 mb-12">
               More Stories That Touch Hearts
             </h2>
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
               {exampleStories.map((story) => (
-                <Card key={story.id} className="p-6 hover:shadow-xl transition-all duration-300">
-                  <div className="mb-4">
-                    <blockquote className="text-lg font-medium text-neutral-800 mb-2">
+                <Card key={story.id} className="p-6 hover:shadow-xl transition-all duration-300 h-full">
+                  <div className="h-full flex flex-col">
+                    <blockquote className="text-lg font-medium text-neutral-800 mb-3 flex-grow">
                       "{story.quote}"
                     </blockquote>
                     <div className="flex items-center gap-2 text-neutral-600 mb-3">
                       <span className="text-xl">{story.emoji}</span>
-                      <span className="font-medium">{story.name}, {story.age}</span>
-                      <span className="text-sm">– {story.location}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm">{story.name}, {story.age}</span>
+                        <span className="text-xs text-neutral-500">{story.location}</span>
+                      </div>
                     </div>
-                    <p className="text-neutral-700 italic">"{story.followUp}"</p>
+                    <p className="text-neutral-700 italic text-sm">"{story.followUp}"</p>
                   </div>
                 </Card>
               ))}
@@ -323,53 +308,6 @@ const ExamplesPage: React.FC = () => {
                   </Button>
                 </div>
               </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Stories That Changed Lives */}
-        <section className="py-16 bg-gradient-to-b from-white to-neutral-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-neutral-800 mb-4">
-                Stories That Changed Lives
-              </h2>
-              <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-                These aren't just stories—they're healing tools, family reunions, time machines.
-              </p>
-            </div>
-
-            <div className="max-w-6xl mx-auto space-y-16">
-              {impactStories.map((story, index) => (
-                <div
-                  key={index}
-                  className={`flex flex-col ${
-                    index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
-                  } items-center gap-8 lg:gap-12`}
-                >
-                  <div className="lg:w-1/2">
-                    <img
-                      src={story.image}
-                      alt={story.title}
-                      className="w-full h-64 lg:h-80 object-cover rounded-2xl shadow-lg"
-                    />
-                  </div>
-                  <div className="lg:w-1/2 space-y-6">
-                    <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-800">
-                      {story.title}
-                    </h3>
-                    <p className="text-lg text-neutral-600 leading-relaxed">
-                      {story.description}
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="border-indigo-500 text-indigo-600 hover:bg-indigo-50"
-                    >
-                      {story.cta} →
-                    </Button>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
