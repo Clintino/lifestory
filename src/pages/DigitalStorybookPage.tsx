@@ -5,6 +5,7 @@ import PageTransition from '../components/ui/PageTransition';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { generateFullStorybook } from '../lib/openai';
+import { generatePDF, type StoryData } from '../lib/pdfGenerator';
 
 const DigitalStorybookPage: React.FC = () => {
   const { id } = useParams();
@@ -15,6 +16,7 @@ const DigitalStorybookPage: React.FC = () => {
   const [storybook, setStorybook] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     const generateStorybook = async () => {
@@ -28,6 +30,9 @@ const DigitalStorybookPage: React.FC = () => {
         const relationshipData = JSON.parse(localStorage.getItem('relationshipData') || '{}');
         const selectedQuestions = JSON.parse(localStorage.getItem('selectedQuestions') || '[]');
 
+        console.log('Profile Data:', profileData); // Debug log
+        console.log('Responses:', responses); // Debug log
+
         if (!profileData.name || Object.keys(responses).length === 0) {
           throw new Error('No story data found. Please complete the story creation process first.');
         }
@@ -38,13 +43,13 @@ const DigitalStorybookPage: React.FC = () => {
           selectedQuestions: selectedQuestions
         });
 
-        // Structure the storybook data
+        // Structure the storybook data using ACTUAL user data
         const storybookData = {
           profile: {
-            name: profileData.name,
+            name: profileData.name, // Use actual user's name
             birthYear: profileData.birthYear,
             location: profileData.location || 'Unknown',
-            description: profileData.description || 'A life story worth preserving',
+            description: profileData.description || `${profileData.name}'s life story - a legacy worth preserving`,
             coverImage: profileData.images?.[0] || 'https://images.pexels.com/photos/7116213/pexels-photo-7116213.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'
           },
           chapters: generatedStorybook.chapters.map((chapter: any, index: number) => ({
@@ -63,6 +68,7 @@ const DigitalStorybookPage: React.FC = () => {
           }
         };
 
+        console.log('Final Storybook Data:', storybookData); // Debug log
         setStorybook(storybookData);
       } catch (error) {
         console.error('Error generating storybook:', error);
@@ -87,6 +93,28 @@ const DigitalStorybookPage: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleDownloadPDF = async () => {
+    if (!storybook) return;
+    
+    try {
+      setIsGeneratingPDF(true);
+      
+      // Convert storybook data to the format expected by PDF generator
+      const pdfData: StoryData = {
+        profile: storybook.profile,
+        chapters: storybook.chapters,
+        metadata: storybook.metadata
+      };
+      
+      await generatePDF(pdfData);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -186,9 +214,11 @@ const DigitalStorybookPage: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  icon={<Download size={16} />}
+                  icon={isGeneratingPDF ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  onClick={handleDownloadPDF}
+                  disabled={isGeneratingPDF}
                 >
-                  Download PDF
+                  {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
                 </Button>
                 <Button
                   variant="outline"
@@ -291,7 +321,7 @@ const DigitalStorybookPage: React.FC = () => {
 
               {/* Main Content */}
               <div className="lg:col-span-3">
-                <Card className="mb-8">
+                <Card className="mb-8" id="storybook-content">
                   <div className="p-8 md:p-12">
                     
                     {/* Chapter Header */}
@@ -382,9 +412,11 @@ const DigitalStorybookPage: React.FC = () => {
                       <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button
                           variant="primary"
-                          icon={<Download size={16} />}
+                          icon={isGeneratingPDF ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                          onClick={handleDownloadPDF}
+                          disabled={isGeneratingPDF}
                         >
-                          Download Complete Story
+                          {isGeneratingPDF ? 'Generating PDF...' : 'Download Complete Story'}
                         </Button>
                         <Button
                           variant="outline"
