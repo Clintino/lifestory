@@ -29,6 +29,7 @@ const HomePage: React.FC = () => {
               <Button 
                 variant="outline" 
                 size="lg"
+                to="/examples"
               >
                 See examples
               </Button>

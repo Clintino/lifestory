@@ -7,6 +7,7 @@ import Layout from './components/layout/Layout';
 
 // Pages
 import HomePage from './pages/HomePage';
+import ExamplesPage from './pages/ExamplesPage';
 import ChooseRelationshipPage from './pages/ChooseRelationshipPage';
 import CreateProfilePage from './pages/CreateProfilePage';
 import QuestionSelectionPage from './pages/QuestionSelectionPage';
@@ -23,6 +24,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
+          <Route path="examples" element={<ExamplesPage />} />
           <Route path="choose-relationship" element={<ChooseRelationshipPage />} />
           <Route path="create-profile" element={<CreateProfilePage />} />
           <Route path="question-selection" element={<QuestionSelectionPage />} />
