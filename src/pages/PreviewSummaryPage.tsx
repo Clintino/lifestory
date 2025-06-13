@@ -31,8 +31,7 @@ const PreviewSummaryPage: React.FC = () => {
   const [storyContent, setStoryContent] = useState('');
   const [profileData, setProfileData] = useState<any>(null);
   const [showCTA, setShowCTA] = useState(false);
-  const [blurredSentences, setBlurredSentences] = useState<number[]>([]);
-  const [revealedSentence, setRevealedSentence] = useState<number | null>(null);
+  const [dynamicQuote, setDynamicQuote] = useState('');
 
   useEffect(() => {
     // Get profile data and story responses from localStorage
@@ -44,8 +43,9 @@ const PreviewSummaryPage: React.FC = () => {
     const content = generateStoryContent(profile, responses);
     setStoryContent(content);
 
-    // Set up blurred sentences (sentences 3 and 5)
-    setBlurredSentences([2, 4]);
+    // Generate dynamic quote from responses
+    const quote = generateDynamicQuote(responses);
+    setDynamicQuote(quote);
 
     // Show CTA after scroll
     const handleScroll = () => {
@@ -59,19 +59,72 @@ const PreviewSummaryPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const generateDynamicQuote = (responses: any) => {
+    // Extract a meaningful quote from the user's responses
+    const responseValues = Object.values(responses).filter(r => typeof r === 'string' && r.trim().length > 0);
+    
+    if (responseValues.length === 0) {
+      return "Every life has a story worth telling...";
+    }
+
+    // Try to find a quote-worthy sentence from responses
+    for (const response of responseValues) {
+      const sentences = (response as string).split(/[.!?]+/).filter(s => s.trim().length > 20);
+      for (const sentence of sentences) {
+        const trimmed = sentence.trim();
+        // Look for sentences that sound personal or meaningful
+        if (trimmed.length > 30 && trimmed.length < 120 && 
+            (trimmed.toLowerCase().includes('remember') || 
+             trimmed.toLowerCase().includes('always') ||
+             trimmed.toLowerCase().includes('never forget') ||
+             trimmed.toLowerCase().includes('taught me') ||
+             trimmed.toLowerCase().includes('learned'))) {
+          return trimmed + (trimmed.endsWith('.') ? '' : '...');
+        }
+      }
+    }
+
+    // Fallback to first meaningful sentence
+    const firstResponse = responseValues[0] as string;
+    const firstSentence = firstResponse.split(/[.!?]+/)[0].trim();
+    if (firstSentence.length > 20 && firstSentence.length < 120) {
+      return firstSentence + '...';
+    }
+
+    return "A life filled with precious memories and wisdom...";
+  };
+
   const generateStoryContent = (profile: any, responses: any) => {
     const name = profile?.name || 'our loved one';
     const birthYear = profile?.birthYear ? ` born in ${profile.birthYear}` : '';
     
-    return `${name}${birthYear} has lived a life rich with experiences and memories that deserve to be preserved. Growing up in a time when the world was different, their childhood was filled with moments that shaped who they would become. One of their proudest achievements stands as a testament to their character and determination. Life wasn't always easy, but they faced challenges with remarkable resilience. Family traditions have always held a special place in their heart. To future generations, they wish to pass on this wisdom that has guided them through life's journey.`;
-  };
+    // Create a more personalized story based on actual responses
+    const responseValues = Object.values(responses).filter(r => typeof r === 'string' && r.trim().length > 0);
+    
+    if (responseValues.length === 0) {
+      return `${name}${birthYear} has lived a life rich with experiences and memories that deserve to be preserved. Growing up in a time when the world was different, their childhood was filled with moments that shaped who they would become. One of their proudest achievements stands as a testament to their character and determination. Life wasn't always easy, but they faced challenges with remarkable resilience. Family traditions have always held a special place in their heart. To future generations, they wish to pass on wisdom that has guided them through life's journey.`;
+    }
 
-  const handleRevealSentence = (index: number) => {
-    setRevealedSentence(index);
-    setTimeout(() => setRevealedSentence(null), 5000);
-  };
+    // Build story from actual responses
+    let story = `${name}${birthYear} has lived a life rich with experiences and memories that deserve to be preserved. `;
+    
+    // Add content from responses, taking first few sentences from each
+    responseValues.forEach((response, index) => {
+      if (index < 3) { // Limit to first 3 responses for preview
+        const sentences = (response as string).split(/[.!?]+/).filter(s => s.trim().length > 10);
+        if (sentences.length > 0) {
+          const firstSentence = sentences[0].trim();
+          if (firstSentence.length > 0) {
+            story += firstSentence + (firstSentence.endsWith('.') ? ' ' : '. ');
+          }
+        }
+      }
+    });
 
-  const sentences = storyContent.split('. ').filter(s => s.length > 0);
+    story += 'These stories and memories are more than just tales from the past - they are the threads that weave together our family\'s tapestry, connecting generations through shared experiences and values.';
+
+    return story;
+  };
 
   return (
     <PageTransition>
@@ -99,13 +152,13 @@ const PreviewSummaryPage: React.FC = () => {
 
                 {/* Page content */}
                 <div className="p-8 md:p-12">
-                  {/* Opening pull quote */}
+                  {/* Opening pull quote - now dynamic */}
                   <div className="relative mb-8 text-center">
                     <svg className="absolute inset-0 w-full h-full text-neutral-100 -z-10" viewBox="0 0 100 100">
                       <text x="50" y="50" fontSize="60" textAnchor="middle" dominantBaseline="middle" fill="currentColor" opacity="0.3">"</text>
                     </svg>
                     <blockquote className="text-2xl font-serif italic text-neutral-700 relative z-10">
-                      "I still remember the smell of mom's fresh bread..."
+                      "{dynamicQuote}"
                     </blockquote>
                   </div>
 
@@ -131,32 +184,13 @@ const PreviewSummaryPage: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Story text - fully visible, no blurs */}
                     <div className="text-neutral-700 leading-relaxed space-y-4">
-                      {sentences.map((sentence, index) => {
-                        const isBlurred = blurredSentences.includes(index);
-                        const isRevealed = revealedSentence === index;
-                        
-                        return (
-                          <p key={index} className="text-base">
-                            {index === 2 && (
-                              <span className="inline-block bg-amber-100 px-2 py-1 rounded text-sm font-medium text-amber-800 mr-2">
-                                1945
-                              </span>
-                            )}
-                            <span
-                              className={`transition-all duration-300 ${
-                                isBlurred && !isRevealed 
-                                  ? 'filter blur-sm cursor-pointer hover:blur-none' 
-                                  : ''
-                              }`}
-                              onClick={() => isBlurred && handleRevealSentence(index)}
-                              title={isBlurred ? "Tap to reveal" : ""}
-                            >
-                              {sentence}.
-                            </span>
-                          </p>
-                        );
-                      })}
+                      {storyContent.split('. ').filter(s => s.length > 0).map((sentence, index) => (
+                        <p key={index} className="text-base">
+                          {sentence}{sentence.endsWith('.') ? '' : '.'} 
+                        </p>
+                      ))}
                     </div>
 
                     {/* Preview indicator */}
