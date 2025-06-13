@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, PencilLine } from 'lucide-react';
+import { User, Mail, PencilLine, Loader2 } from 'lucide-react';
 import PageTransition from '../components/ui/PageTransition';
 import ProgressIndicator from '../components/ui/ProgressIndicator';
 import Button from '../components/ui/Button';
@@ -27,6 +27,8 @@ const StoryInputPage: React.FC = () => {
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [email, setEmail] = useState('');
   const [isInvitationSent, setIsInvitationSent] = useState(false);
+  const [isSendingInvitation, setIsSendingInvitation] = useState(false);
+  const [invitationError, setInvitationError] = useState('');
 
   useEffect(() => {
     const savedResponses = localStorage.getItem('storyResponses');
@@ -61,12 +63,48 @@ const StoryInputPage: React.FC = () => {
     navigate('/preview');
   };
 
-  const handleSendInvitation = () => {
-    // Simulate sending invitation
-    setIsInvitationSent(true);
-    setTimeout(() => {
-      setIsInvitationSent(false);
-    }, 3000);
+  const handleSendInvitation = async () => {
+    setIsSendingInvitation(true);
+    setInvitationError('');
+
+    try {
+      const profileData = JSON.parse(localStorage.getItem('profileData') || '{}');
+      
+      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invitation`;
+      
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          profileName: profileData.name || 'your loved one',
+          senderName: 'A family member' // You could collect this from user
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to send invitation');
+      }
+
+      const result = await response.json();
+      setIsInvitationSent(true);
+      
+      // Reset after 5 seconds
+      setTimeout(() => {
+        setIsInvitationSent(false);
+        setEmail('');
+      }, 5000);
+
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      setInvitationError(error instanceof Error ? error.message : 'Failed to send invitation');
+    } finally {
+      setIsSendingInvitation(false);
+    }
   };
 
   const currentPrompt = prompts[currentPromptIndex];
@@ -134,7 +172,7 @@ const StoryInputPage: React.FC = () => {
                 Invite your loved one to tell their own story
               </h3>
               <p className="text-neutral-600">
-                We'll send them a link with prompts they can answer directly.
+                We'll send them a personalized email with questions they can answer directly.
               </p>
             </div>
             
@@ -150,6 +188,7 @@ const StoryInputPage: React.FC = () => {
                 className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
                 placeholder="grandma@example.com"
                 required
+                disabled={isSendingInvitation}
               />
               
               <h4 className="font-medium mb-2 text-sm text-neutral-700">Preview of Questions:</h4>
@@ -164,16 +203,25 @@ const StoryInputPage: React.FC = () => {
               
               <Button
                 className="w-full"
-                disabled={!email || !/\S+@\S+\.\S+/.test(email)}
+                disabled={!email || !/\S+@\S+\.\S+/.test(email) || isSendingInvitation}
                 onClick={handleSendInvitation}
+                icon={isSendingInvitation ? <Loader2 size={16} className="animate-spin" /> : undefined}
               >
-                {isInvitationSent ? 'Invitation Sent!' : 'Send Invitation'}
+                {isSendingInvitation ? 'Sending...' : isInvitationSent ? 'Invitation Sent!' : 'Send Invitation'}
               </Button>
               
               {isInvitationSent && (
                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
                   <p className="text-green-700 text-sm text-center">
-                    ✓ Invitation sent to {email}! They'll receive an email with a link to answer the questions.
+                    ✓ Invitation sent to {email}! They'll receive an email with a personalized link to answer the questions.
+                  </p>
+                </div>
+              )}
+
+              {invitationError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-700 text-sm text-center">
+                    ✗ {invitationError}
                   </p>
                 </div>
               )}
